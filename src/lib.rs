@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use serde::de::{Deserializer, Error};
 use std::collections::HashMap;
+use std::ops::Deref;
 
 #[derive(Debug, PartialEq)]
 struct MapTransform(String, String, Vec<String>);
@@ -53,7 +54,6 @@ enum Data {
     Bool(bool),
     Map(HashMap<String, Box<Data>>),
     Tranform(Transform),
-    Data(Box<Data>),
 }
 
 impl MapTransform {
@@ -68,30 +68,25 @@ impl PluckTransform {
     }
 }
 
-const JSON: &'static str = r#"
-    {
-        "obj": {
-            "nest": "string",
-            "map": ["xf_map", "$data", ["lookup", "my", "data"]],
-            "pluck": ["xf_pluck", "$data", ["pluck", "me", "daddy"]],
-            "bool": true,
-            "num": 42,
-            "more_nest": {
-                "mapper": ["xf_map", "$data", ["prop"]]
-            }
-        },
-        "num": -98,
-        "string": "testing",
-        "bool": false,
-        "map": ["xf_map", "$source", ["map_property"]],
-        "pluck": ["xf_pluck", "$object", ["pluck_property"]]
-    }"#;
-
-pub fn resolve(_object: HashMap<&str, &str>) {
-    let parsed: HashMap<String, Data> = serde_json::from_str(JSON).expect("error parsing json");
-
-    for (k, v) in &parsed {
-
-        println!("{}: {:?}", k, v);
+fn log_parsed(data: &HashMap<String, Box<Data>>) {
+    for (k, v) in data {
+        match v.deref() {
+            Data::Bool(b) => println!("___ BOOL {:?} at {:?}", b, k),
+            Data::Number(n) => println!("___ NUMBER {:?} at {:?}", n, k),
+            Data::String(s) => println!("___ STRING {} at {}", s, k),
+            Data::Map(map) => log_parsed(&map),
+            Data::Tranform(xf) => {
+                match xf {
+                    Transform::MapTransform(map) => println!("___ XF_MAP at {}: lookup {:?} from {}", k, map.2, map.1),
+                    Transform::PluckTransform(pluck) => println!("___ XF_MAP at {}: lookup {:?} from {}", k, pluck.2, pluck.1),
+                }
+            },
+        }
     }
+}
+
+pub fn resolve(json: &'static str) {
+    let parsed: HashMap<String, Box<Data>> = serde_json::from_str(json).expect("error parsing json");
+
+    log_parsed(&parsed);
 }
