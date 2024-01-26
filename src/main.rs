@@ -12,6 +12,15 @@ const JSON: &'static str = r#"
                 "mapper": ["xf_map", "$data", ["prop"]]
             }
         },
+        "array": [
+            1,
+            "one",
+            true,
+            { "obj": "testing" },
+            [1, 2, 3],
+            ["xf_map", "$src", ["prop"]],
+            ["xf_pluck", "$plk", ["plk_prop"]]
+        ],
         "num": -98,
         "string": "testing",
         "bool": false,

@@ -54,6 +54,7 @@ enum Data {
     Bool(bool),
     Map(HashMap<String, Box<Data>>),
     Tranform(Transform),
+    Array(Vec<Box<Data>>),
 }
 
 impl MapTransform {
@@ -75,6 +76,7 @@ fn log_parsed(data: &HashMap<String, Box<Data>>) {
             Data::Number(n) => println!("___ NUMBER {:?} at {:?}", n, k),
             Data::String(s) => println!("___ STRING {} at {}", s, k),
             Data::Map(map) => log_parsed(&map),
+            Data::Array(array) => println!("___ ARRAY {:?} at {}", array, k),
             Data::Tranform(xf) => {
                 match xf {
                     Transform::MapTransform(map) => println!("___ XF_MAP at {}: lookup {:?} from {}", k, map.2, map.1),
