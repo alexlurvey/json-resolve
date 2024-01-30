@@ -1,18 +1,27 @@
 use serde::Deserialize;
 use serde::de::{Deserializer, Error};
 use std::collections::HashMap;
+use serde_json::value::Value;
 
 #[derive(Debug, PartialEq)]
-pub struct MapTransform(String, pub String, pub Vec<String>);
+pub struct MapTransform {
+    pub source: String,
+    pub path: Vec<String>,
+    pub value: serde_json::Value,
+}
 
 #[derive(Debug, PartialEq)]
-pub struct PluckTransform(String, pub String, pub Vec<String>);
+pub struct PluckTransform {
+    pub source: String,
+    pub path: Vec<String>,
+    pub value: serde_json::Value,
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Transform {
-    MapTransform(MapTransform),
-    PluckTransform(PluckTransform),
+    Map(MapTransform),
+    Pluck(PluckTransform),
 }
 
 #[derive(Debug, Deserialize)]
@@ -22,19 +31,27 @@ pub enum Data {
     Number(i64),
     Bool(bool),
     Map(HashMap<String, Box<Data>>),
-    Tranform(Transform),
+    Transform(Transform),
     Array(Vec<Box<Data>>),
 }
 
 impl MapTransform {
     pub fn new(source: &str, list: Vec<String>) -> Self {
-        MapTransform(String::from("xf_map"), String::from(source), list)
+        MapTransform {
+            source: String::from(source),
+            path: list,
+            value: Value::Null,
+        }
     }
 }
 
 impl PluckTransform {
     pub fn new(source: &str, list: Vec<String>) -> Self {
-        PluckTransform(String::from("xf_pluck"), String::from(source), list)
+        PluckTransform {
+            source: String::from(source),
+            path: list,
+            value: Value::Null,
+        }
     }
 }
 
