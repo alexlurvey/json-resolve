@@ -1,61 +1,53 @@
-use std::collections::HashMap;
-use std::ops::Deref;
 use crate::parse_json::{Data, Transform};
+use serde_json::{Map, Value};
+use std::{collections::HashMap, ops::DerefMut};
 
 pub mod parse_json;
 
-fn resolve_data(data: &Box<Data>) -> Box<Data> {
-    match data.deref() {
+fn resolve_data(data: &mut Box<Data>, variables: &Map<String, Value>) {
+    match data.deref_mut() {
         Data::Transform(xf) => {
             match xf {
-                Transform::Map(_map) => {
-                    Box::new(Data::String("processing xf_map".to_string()))
+                Transform::Map(map) => {
+                    map.resolve_source(variables);
                 },
-                Transform::Pluck(_pluck) => {
-                    Box::new(Data::String("procesing xf_pluck".to_string()))
+                Transform::Pluck(pluck) => {
+                    pluck.resolve_source(variables);
                 }
             }
         },
         Data::Map(map) => {
-            Box::new(Data::Map(resolve_map(&map)))
+            resolve_map(map, variables);
         },
         Data::Array(array) => {
-            Box::new(Data::Array(resolve_array(array)))
+            resolve_array(array, variables);
         },
-        Data::Bool(b) => {
-            Box::new(Data::Bool(*b))
+        Data::Bool(..) => {
+        //    println!("process bool");
         },
-        Data::Number(n) => {
-            Box::new(Data::Number(*n))
+        Data::Number(..) => {
+        //    println!("process number");
         },
-        Data::String(s) => {
-            Box::new(Data::String(s.to_string()))
+        Data::String(..) => {
+        //    println!("process string");
         },
     }
 }
 
-fn resolve_array(data: &Vec<Box<Data>>) -> Vec<Box<Data>> {
-    let mut result: Vec<Box<Data>> = Vec::new();
-
+fn resolve_array(data: &mut Vec<Box<Data>>, variables: &Map<String, Value>) {
     for item in data {
-        result.push(resolve_data(&item));
+        resolve_data(item, variables);
     }
-
-    result
 }
 
-fn resolve_map(data: &HashMap<String, Box<Data>>) -> HashMap<String, Box<Data>> {
-    let mut result: HashMap<String, Box<Data>> = HashMap::new();
-
-    for (k, v) in data {
-        result.insert(k.to_string(), resolve_data(&v));
+fn resolve_map(data: &mut HashMap<String, Box<Data>>, variables: &Map<String, Value>) {
+    for (_k, v) in data {
+        resolve_data(v, variables);
     }
-
-    result
 }
 
-pub fn resolve(json: &'static str) {
-    let parsed: HashMap<String, Box<Data>> = serde_json::from_str(json).expect("error parsing json");
-    let root = resolve_map(&parsed);
-    println!("{:#?}", root);
+pub fn resolve(json: &'static str, variables: &Map<String, Value>) {
+    let mut parsed: HashMap<String, Box<Data>> = serde_json::from_str(json).expect("error parsing json");
+    resolve_map(&mut parsed, variables);
+    println!("{:#?}", parsed);
 }

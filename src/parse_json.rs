@@ -1,20 +1,20 @@
 use serde::Deserialize;
 use serde::de::{Deserializer, Error};
 use std::collections::HashMap;
-use serde_json::value::Value;
+use serde_json::{Map, Value};
 
 #[derive(Debug, PartialEq)]
 pub struct MapTransform {
     pub source: String,
     pub path: Vec<String>,
-    pub value: serde_json::Value,
+    pub value: Option<Value>,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct PluckTransform {
     pub source: String,
     pub path: Vec<String>,
-    pub value: serde_json::Value,
+    pub value: Option<Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,8 +40,18 @@ impl MapTransform {
         MapTransform {
             source: String::from(source),
             path: list,
-            value: Value::Null,
+            value: None,
         }
+    }
+
+    pub fn resolve_source(&mut self, variables: &Map<String, Value>) -> bool {
+        let key = &self.source[1..];
+        if let Some(v) = variables.get(key) {
+            self.value = Some(v.to_owned());
+            return true
+        }
+
+        false
     }
 }
 
@@ -50,8 +60,18 @@ impl PluckTransform {
         PluckTransform {
             source: String::from(source),
             path: list,
-            value: Value::Null,
+            value: None,
         }
+    }
+
+    pub fn resolve_source(&mut self, variables: &Map<String, Value>) -> bool {
+        let key = &self.source[1..];
+        if let Some(v) = variables.get(key) {
+            self.value = Some(v.to_owned());
+            return true
+        }
+
+        false
     }
 }
 

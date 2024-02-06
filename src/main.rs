@@ -1,15 +1,17 @@
+use serde_json::json;
+use serde_json::{Map, Value};
 use json_resolve::resolve;
 
 const JSON: &'static str = r#"
     {
         "obj": {
             "nest": "string",
-            "map": ["xf_map", "$data", ["lookup", "my", "data"]],
+            "map": ["xf_map", "$src", ["lookup", "my", "data"]],
             "pluck": ["xf_pluck", "$data", ["pluck", "me", "daddy"]],
             "bool": true,
             "num": 42,
             "more_nest": {
-                "mapper": ["xf_map", "$data", ["prop"]]
+                "mapper": ["xf_pluck", "$data", ["not_found_prop"]]
             }
         },
         "array": [
@@ -24,10 +26,19 @@ const JSON: &'static str = r#"
         "num": -98,
         "string": "testing",
         "bool": false,
-        "map": ["xf_map", "$source", ["map_property"]],
-        "pluck": ["xf_pluck", "$object", ["pluck_property"]]
+        "map": ["xf_map", "$src", ["map_property"]],
+        "pluck": ["xf_pluck", "$not_found_object", ["pluck_property"]]
     }"#;
 
 fn main() {
-    resolve(JSON);
+    let variables: Map<String, Value> = json!({
+        "data": {
+            "lookup": {
+                "my": { "data": "my_data" },
+            }
+        },
+        "source": ["one", "two", "three"]
+    }).as_object().unwrap().to_owned();
+
+    resolve(JSON, &variables);
 }
