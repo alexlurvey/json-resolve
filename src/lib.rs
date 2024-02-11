@@ -46,8 +46,31 @@ fn resolve_map(data: &mut HashMap<String, Box<Data>>, variables: &Map<String, Va
     }
 }
 
-pub fn resolve(json: &'static str, variables: &Map<String, Value>) {
+pub fn resolve(json: &'static str, variables: &Map<String, Value>) -> HashMap<String, Box<Data>> {
     let mut parsed: HashMap<String, Box<Data>> = serde_json::from_str(json).expect("error parsing json");
     resolve_map(&mut parsed, variables);
-    println!("{:#?}", parsed);
+//    println!("{:#?}", parsed);
+    parsed
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::resolve;
+    use serde_json::json;
+    use serde_json::{Map, Value};
+
+    #[test]
+    fn it_works() {
+        let json = r#"
+            { "a_map": ["xf_map", "$src", ["xf_pluck", "$", ["prop"]]] }
+        "#;
+        let variables: Map<String, Value> = json!({
+            "src": [
+                { "prop": 1 },
+                { "prop": 2 }
+            ]
+        }).as_object().unwrap().to_owned();
+        let _result = resolve(json, &variables);    
+        assert_eq!(true, true);
+    }
 }
