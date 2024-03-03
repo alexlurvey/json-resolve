@@ -1,42 +1,53 @@
-use crate::parse_json::{Data, Transform, Transformable};
+use crate::xforms::{Transform, Transformable};
+use serde::Deserialize;
 use serde_json::{Map, Value};
-use std::{collections::HashMap, ops::DerefMut};
+use std::collections::HashMap;
+use std::ops::DerefMut;
 
-pub mod parse_json;
+mod xforms;
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum Data {
+    String(String),
+    Number(i64),
+    Bool(bool),
+    Map(HashMap<String, Box<Data>>),
+    Transform(Transform),
+    Array(Vec<Box<Data>>),
+}
 
 fn resolve_data(data: &mut Box<Data>, variables: &Map<String, Value>) {
     match data.deref_mut() {
-        Data::Transform(xf) => {
-            match xf {
-                Transform::Map(map) => {
-                    map.resolve_source(variables);
-                    if !map.source_value.is_none() {
-                        map.transform(variables);
-                    }
-                },
-                Transform::Pluck(pluck) => {
-                    pluck.resolve_source(variables);
-                    if !pluck.source_value.is_none() {
-                        pluck.transform(variables);
-                    }
+        Data::Transform(xf) => match xf {
+            Transform::Map(map) => {
+                map.resolve_source(variables);
+                if !map.source_value.is_none() {
+                    map.transform(variables);
+                }
+            }
+            Transform::Pluck(pluck) => {
+                pluck.resolve_source(variables);
+                if !pluck.source_value.is_none() {
+                    pluck.transform(variables);
                 }
             }
         },
         Data::Map(map) => {
             resolve_map(map, variables);
-        },
+        }
         Data::Array(array) => {
             resolve_array(array, variables);
-        },
+        }
         Data::Bool(..) => {
-        //    println!("process bool");
-        },
+            //    println!("process bool");
+        }
         Data::Number(..) => {
-        //    println!("process number");
-        },
+            //    println!("process number");
+        }
         Data::String(..) => {
-        //    println!("process string");
-        },
+            //    println!("process string");
+        }
     }
 }
 
@@ -53,9 +64,10 @@ fn resolve_map(data: &mut HashMap<String, Box<Data>>, variables: &Map<String, Va
 }
 
 pub fn resolve(json: &'static str, variables: &Map<String, Value>) -> HashMap<String, Box<Data>> {
-    let mut parsed: HashMap<String, Box<Data>> = serde_json::from_str(json).expect("error parsing json");
+    let mut parsed: HashMap<String, Box<Data>> =
+        serde_json::from_str(json).expect("error parsing json");
     resolve_map(&mut parsed, variables);
-//    println!("{:#?}", parsed);
+    println!("{:#?}", parsed);
     parsed
 }
 
@@ -75,8 +87,11 @@ mod tests {
                 { "prop": 1 },
                 { "prop": 2 }
             ]
-        }).as_object().unwrap().to_owned();
-        let result = resolve(json, &variables);    
+        })
+        .as_object()
+        .unwrap()
+        .to_owned();
+        let result = resolve(json, &variables);
         println!("res {:#?}", result);
         assert_eq!(true, true);
     }
