@@ -6,7 +6,7 @@ const JSON: &'static str = r#"
     {
         "obj": {
             "nest": "string",
-            "map": ["xf_map", "$src", ["lookup", "my", "data"]],
+            "map": ["xf_map", "$src", ["xf_pluck", "$", ["lookup", "my", "data"]]],
             "pluck": ["xf_pluck", "$data", ["pluck", "me", "daddy"]],
             "bool": true,
             "num": 42,
@@ -20,14 +20,15 @@ const JSON: &'static str = r#"
             true,
             { "obj": "testing" },
             [1, 2, 3],
-            ["xf_map", "$src", ["prop"]],
+            ["xf_map", "$src", ["xf_pluck", "$", ["prop"]]],
             ["xf_pluck", "$plk", ["plk_prop"]]
         ],
         "num": -98,
         "string": "testing",
         "bool": false,
-        "map": ["xf_map", "$src", ["map_property"]],
-        "pluck": ["xf_pluck", "$not_found_object", ["pluck_property"]]
+        "map": ["xf_map", "$src", ["xf_pluck", "$", ["map_property"]]],
+        "pluck": ["xf_pluck", "$not_found_object", ["pluck_property"]],
+        "transform_as_source": ["xf_map", ["xf_pluck", "$data", ["nested_array"]], ["xf_pluck", "$", ["prop"]]]
     }"#;
 
 fn main() {
@@ -35,7 +36,11 @@ fn main() {
         "data": {
             "lookup": {
                 "my": { "data": "my_data" },
-            }
+            },
+            "nested_array": [
+                { "prop": 1 },
+                { "prop": 2 },
+            ],
         },
         "source": ["one", "two", "three"]
     }).as_object().unwrap().to_owned();

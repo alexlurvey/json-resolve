@@ -1,4 +1,4 @@
-use crate::parse_json::{Data, Transform};
+use crate::parse_json::{Data, Transform, Transformable};
 use serde_json::{Map, Value};
 use std::{collections::HashMap, ops::DerefMut};
 
@@ -10,9 +10,15 @@ fn resolve_data(data: &mut Box<Data>, variables: &Map<String, Value>) {
             match xf {
                 Transform::Map(map) => {
                     map.resolve_source(variables);
+                    if !map.source_value.is_none() {
+                        map.transform(variables);
+                    }
                 },
                 Transform::Pluck(pluck) => {
                     pluck.resolve_source(variables);
+                    if !pluck.source_value.is_none() {
+                        pluck.transform(variables);
+                    }
                 }
             }
         },
@@ -70,7 +76,8 @@ mod tests {
                 { "prop": 2 }
             ]
         }).as_object().unwrap().to_owned();
-        let _result = resolve(json, &variables);    
+        let result = resolve(json, &variables);    
+        println!("res {:#?}", result);
         assert_eq!(true, true);
     }
 }
