@@ -2,12 +2,12 @@ use serde_json::json;
 use serde_json::{Map, Value};
 use json_resolve::resolve;
 
-const JSON: &'static str = r#"
+const JSON: &str = r#"
     {
         "obj": {
             "nest": "string",
             "map": ["xf_map", "$src", ["xf_pluck", "$", ["lookup", "my", "data"]]],
-            "pluck": ["xf_pluck", "$data", ["pluck", "me", "daddy"]],
+            "pluck": ["xf_pluck", "$data", ["lookup", "my", "data"]],
             "bool": true,
             "num": 42,
             "more_nest": {

@@ -6,13 +6,13 @@ use serde_json::{Map, Value};
 #[derive(Debug, PartialEq)]
 pub struct PluckTransform {
     pub source: Box<TransformSource>,
-    pub path: Box<Vec<String>>,
+    pub path: Vec<String>,
     pub value: Option<Value>,
     pub source_value: Option<Value>,
 }
 
 impl PluckTransform {
-    pub fn new(source: TransformSource, path: Box<Vec<String>>) -> Self {
+    pub fn new(source: TransformSource, path: Vec<String>) -> Self {
         PluckTransform {
             source: Box::new(source),
             path,
@@ -35,39 +35,43 @@ impl Transformable for PluckTransform {
         self.source_value.as_ref()
     }
 
-    fn set_source(&mut self, value: Value) -> () {
+    fn set_source(&mut self, value: Value) {
         self.source_value = Some(value);
     }
 
     fn transform(&mut self, variables: &Map<String, Value>) {
         let found = resolve_source(self, variables);
-        if found == true {
-            self.value = match self.get_source_value() {
-                Some(Value::Object(obj)) => {
-                    let mut result: Option<&Value> = None;
-                    let mut look: Option<&Map<String, Value>> = Some(obj);
-
-                    for k in self.path.iter() {
-                        result = look.expect("should be serde_json::Value::Object").get(k);
-                        look = match result {
-                            Some(Value::Object(obj)) => Some(obj),
-                            _ => look,
-                        }
-                    }
-
-                    result.cloned()
+        if found {
+            if let Some(Value::Object(obj)) = self.get_source_value() {
+                let plucked = pluck(obj, &self.path);
+                if let Some(value) = plucked {
+                    self.value = Some(value.clone());
+                } else {
+//                    println!("xf_pluck path could not resolve to a value, {:?}", self.path);
                 }
-                None => {
-                    println!("xf_pluck source resolved to null");
-                    None
-                }
-                other => {
-                    println!("xf_pluck source resolved to non object value, {:?}", other);
-                    None
-                }
-            };
+            } else {
+//               println!("xf_pluck source resolved to non-object value");
+            }
         }
     }
+}
+
+pub fn pluck<'a>(source: &'a Map<String, Value>, path: &[String]) -> Option<&'a Value> {
+    let mut result: Option<&Value> = None;
+    let mut lookup: &Map<String, Value> = source;
+
+    for key in path.iter() {
+        if let Some(value) = lookup.get(key) {
+            result = Some(value);
+            if let Value::Object(obj) = value {
+                lookup = &obj;
+            }
+        } else {
+            return None;
+        }
+    };
+
+    result
 }
 
 impl<'de> Deserialize<'de> for PluckTransform {
@@ -79,7 +83,7 @@ impl<'de> Deserialize<'de> for PluckTransform {
             Deserialize::deserialize(deserializer)?;
 
         if xf == "xf_pluck" {
-            Ok(PluckTransform::new(src, Box::new(path)))
+            Ok(PluckTransform::new(src, path))
         } else {
             Err(D::Error::custom(format!(
                 "tried parsing xf_map, found [{:?}, {:?}, {:?}]",

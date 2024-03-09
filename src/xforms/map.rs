@@ -1,7 +1,9 @@
 use crate::xforms::{resolve_source, Transform, TransformSource, Transformable};
+use crate::xforms::pluck::pluck;
 use serde::de::{Deserializer, Error};
 use serde::Deserialize;
 use serde_json::{Map, Value};
+use std::ops::Deref;
 
 #[derive(Debug, PartialEq)]
 pub struct MapTransform {
@@ -35,21 +37,32 @@ impl Transformable for MapTransform {
         self.source_value.as_ref()
     }
 
-    fn set_source(&mut self, value: Value) -> () {
+    fn set_source(&mut self, value: Value) {
         self.source_value = Some(value);
     }
 
     fn transform(&mut self, variables: &Map<String, Value>) {
-        if self.source_value == None {
-            self.resolve_source(&variables);
+        if self.source_value.is_none() {
+            self.resolve_source(variables);
         }
 
         match &self.source_value {
             Some(Value::Array(arr)) => {
-                // TODO: actually map the values with self.mapper
                 let mut result: Vec<Value> = Vec::new();
+
                 for item in arr.iter() {
-                    result.push(item.clone());
+                    match self.mapper.deref() {
+                        Transform::Pluck(xf) => {
+                            if let Value::Object(obj) = item {
+                                if let Some(v) = pluck(obj, &xf.path) {
+                                    result.push(v.clone());
+                                }
+                            }
+                        },
+                        Transform::Map(_xf) => {
+                            // TOOD: handle map
+                        }
+                    }
                 }
                 self.value = Some(serde_json::to_value(result).unwrap());
             }

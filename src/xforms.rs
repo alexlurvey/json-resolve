@@ -10,8 +10,8 @@ use std::ops::DerefMut;
 pub trait Transformable {
     fn get_source(&mut self) -> &mut Box<TransformSource>;
     fn get_source_value(&self) -> Option<&Value>;
-    fn set_source(&mut self, value: Value) -> ();
-    fn transform(&mut self, variables: &Map<String, Value>) -> ();
+    fn set_source(&mut self, value: Value);
+    fn transform(&mut self, variables: &Map<String, Value>);
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -36,7 +36,6 @@ pub fn resolve_source(xform: &mut impl Transformable, variables: &Map<String, Va
                 return true;
             }
         }
-
         TransformSource::Transform(source_xform) => {
             source_xform.transform(variables);
         }
@@ -60,7 +59,7 @@ impl Transformable for Transform {
         }
     }
 
-    fn set_source(&mut self, value: Value) -> () {
+    fn set_source(&mut self, value: Value) {
         match *self {
             Transform::Map(ref mut xf) => xf.set_source(value),
             Transform::Pluck(ref mut xf) => xf.set_source(value),
