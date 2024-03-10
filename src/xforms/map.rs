@@ -1,9 +1,8 @@
-use crate::xforms::{resolve_source, Transform, TransformSource, Transformable};
 use crate::xforms::pluck::pluck;
+use crate::xforms::{resolve_source, Transform, TransformSource, Transformable};
 use serde::de::{Deserializer, Error};
 use serde::Deserialize;
 use serde_json::{Map, Value};
-use std::ops::Deref;
 
 #[derive(Debug, PartialEq)]
 pub struct MapTransform {
@@ -48,23 +47,9 @@ impl Transformable for MapTransform {
 
         match &self.source_value {
             Some(Value::Array(arr)) => {
-                let mut result: Vec<Value> = Vec::new();
-
-                for item in arr.iter() {
-                    match self.mapper.deref() {
-                        Transform::Pluck(xf) => {
-                            if let Value::Object(obj) = item {
-                                if let Some(v) = pluck(obj, &xf.path) {
-                                    result.push(v.clone());
-                                }
-                            }
-                        },
-                        Transform::Map(_xf) => {
-                            // TOOD: handle map
-                        }
-                    }
+                if let Ok(v) = map(arr, &self.mapper) {
+                    self.value = Some(v);
                 }
-                self.value = Some(serde_json::to_value(result).unwrap());
             }
             None => {
                 println!("attempted to transform {:?} but found None", self.source);
@@ -74,6 +59,33 @@ impl Transformable for MapTransform {
             }
         }
     }
+}
+
+pub fn map(source: &[Value], mapper: &Transform) -> Result<serde_json::Value, serde_json::Error> {
+    let mut result: Vec<Value> = Vec::new();
+
+    for item in source.iter() {
+        match mapper {
+            Transform::Pluck(ref xf) => {
+                if let Value::Object(obj) = item {
+                    if let Some(v) = pluck(obj, &xf.path) {
+                        result.push(v.clone());
+                    }
+                }
+            }
+            Transform::Map(ref xf) => {
+                if let Value::Array(array) = item {
+                    if let Ok(mapped) = map(array, &xf.mapper) {
+                        if let Ok(v) = serde_json::to_value(mapped) {
+                            result.push(v);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    serde_json::to_value(result)
 }
 
 impl<'de> Deserialize<'de> for MapTransform {

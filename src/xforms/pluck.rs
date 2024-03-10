@@ -86,7 +86,7 @@ impl<'de> Deserialize<'de> for PluckTransform {
             Ok(PluckTransform::new(src, path))
         } else {
             Err(D::Error::custom(format!(
-                "tried parsing xf_map, found [{:?}, {:?}, {:?}]",
+                "tried parsing xf_pluck, found [{:?}, {:?}, {:?}]",
                 xf, src, path
             )))
         }

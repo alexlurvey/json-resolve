@@ -63,8 +63,7 @@ fn resolve_map(data: &mut HashMap<String, Data>, variables: &Map<String, Value>)
 }
 
 pub fn resolve(json: &'static str, variables: &Map<String, Value>) -> HashMap<String, Data> {
-    let mut parsed: HashMap<String, Data> =
-        serde_json::from_str(json).expect("error parsing json");
+    let mut parsed: HashMap<String, Data> = serde_json::from_str(json).expect("error parsing json");
     resolve_map(&mut parsed, variables);
     //    println!("{:#?}", parsed);
     parsed
