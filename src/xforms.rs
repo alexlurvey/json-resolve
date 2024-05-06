@@ -10,6 +10,12 @@ use std::ops::DerefMut;
 pub trait Transformable {
     fn get_source(&mut self) -> &mut Box<TransformSource>;
     fn get_source_value(&self) -> Option<&Value>;
+    fn resolve_source(&mut self, variables: &Map<String, Value>) -> bool
+    where
+        Self: Sized,
+    {
+        resolve_source(self, variables)
+    }
     fn set_source(&mut self, value: Value);
     fn transform(&mut self, variables: &Map<String, Value>);
 }
@@ -56,6 +62,13 @@ impl Transformable for Transform {
         match *self {
             Transform::Map(ref xf) => xf.get_source_value(),
             Transform::Pluck(ref xf) => xf.get_source_value(),
+        }
+    }
+
+    fn resolve_source(&mut self, variables: &Map<String, Value>) -> bool {
+        match *self {
+            Transform::Map(ref mut xf) => xf.resolve_source(variables),
+            Transform::Pluck(ref mut xf) => xf.resolve_source(variables),
         }
     }
 

@@ -1,6 +1,6 @@
+use json_resolve::resolve;
 use serde_json::json;
 use serde_json::{Map, Value};
-use json_resolve::resolve;
 
 const JSON: &str = r#"
     {
@@ -43,7 +43,12 @@ fn main() {
             ],
         },
         "source": ["one", "two", "three"]
-    }).as_object().unwrap().to_owned();
+    })
+    .as_object()
+    .unwrap()
+    .to_owned();
 
-    resolve(JSON, &variables);
+    let result = resolve(JSON, &variables);
+
+    println!("result -- {:?}", result);
 }

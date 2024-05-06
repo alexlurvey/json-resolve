@@ -1,5 +1,5 @@
 use crate::xforms::pluck::pluck;
-use crate::xforms::{resolve_source, Transform, TransformSource, Transformable};
+use crate::xforms::{Transform, TransformSource, Transformable};
 use serde::de::{Deserializer, Error};
 use serde::Deserialize;
 use serde_json::{Map, Value};
@@ -20,10 +20,6 @@ impl MapTransform {
             value: None,
             source_value: None,
         }
-    }
-
-    pub fn resolve_source(&mut self, variables: &Map<String, Value>) -> bool {
-        resolve_source(self, variables)
     }
 }
 

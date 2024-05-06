@@ -1,4 +1,4 @@
-use crate::xforms::{resolve_source, TransformSource, Transformable};
+use crate::xforms::{TransformSource, Transformable};
 use serde::de::{Deserializer, Error};
 use serde::Deserialize;
 use serde_json::{Map, Value};
@@ -20,10 +20,6 @@ impl PluckTransform {
             source_value: None,
         }
     }
-
-    pub fn resolve_source(&mut self, variables: &Map<String, Value>) -> bool {
-        resolve_source(self, variables)
-    }
 }
 
 impl Transformable for PluckTransform {
@@ -40,17 +36,20 @@ impl Transformable for PluckTransform {
     }
 
     fn transform(&mut self, variables: &Map<String, Value>) {
-        let found = resolve_source(self, variables);
+        let found = self.resolve_source(variables);
         if found {
             if let Some(Value::Object(obj)) = self.get_source_value() {
                 let plucked = pluck(obj, &self.path);
                 if let Some(value) = plucked {
                     self.value = Some(value.clone());
                 } else {
-//                    println!("xf_pluck path could not resolve to a value, {:?}", self.path);
+                    // println!(
+                    //     "xf_pluck path could not resolve to a value, {:?}",
+                    //     self.path
+                    // );
                 }
             } else {
-//               println!("xf_pluck source resolved to non-object value");
+                // println!("xf_pluck source resolved to non-object value");
             }
         }
     }
@@ -69,7 +68,7 @@ pub fn pluck<'a>(source: &'a Map<String, Value>, path: &[String]) -> Option<&'a 
         } else {
             return None;
         }
-    };
+    }
 
     result
 }
