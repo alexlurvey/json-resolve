@@ -102,3 +102,101 @@ impl<'de> Deserialize<'de> for MapTransform {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::resolve;
+    use crate::xforms::Transform;
+    use crate::Data;
+    use serde_json::json;
+    use serde_json::Number;
+    use serde_json::{Map, Value};
+
+    #[test]
+    fn xf_map_with_xf_pluck() {
+        let json = r#"
+            { "a_map": ["xf_map", "$src", ["xf_pluck", "$", ["prop"]]], "some_string": "string_value" }
+        "#;
+
+        let variables: Map<String, Value> = json!({
+            "src": [
+                { "prop": 1 },
+                { "prop": 2 }
+            ]
+        })
+        .as_object()
+        .unwrap()
+        .to_owned();
+
+        let result = resolve(json, &variables);
+
+        let result = result.get("a_map").unwrap();
+
+        if let Data::Transform(Transform::Map(xf)) = result {
+            let result: Vec<Value> = xf
+                .value
+                .as_ref()
+                .expect("value of MapTransform at 'a_map' was not resolved")
+                .as_array()
+                .expect("value of MapTransform at 'a_map' was not resolved to an array")
+                .to_vec();
+
+            let expected = vec![
+                Value::Number(Number::from(1)),
+                Value::Number(Number::from(2)),
+            ];
+
+            assert_eq!(result, expected);
+        } else {
+            panic!("'a_map' was not serialized into a MapTransform");
+        }
+    }
+
+    #[test]
+    fn xf_map_with_xf_map() {
+        let json = r#"
+            { "a_map": ["xf_map", "$src", ["xf_map", "$", ["xf_pluck", "$", ["count"]]]] }
+        "#;
+
+        let variables: Map<String, Value> = json!({
+            "src": [
+                [{ "count": 1 }, { "count": 2 }, { "count": 3 }],
+                [{ "count": 4 }, { "count": 5 }, { "count": 6 }]
+            ]
+        })
+        .as_object()
+        .unwrap()
+        .to_owned();
+
+        let result = resolve(json, &variables);
+
+        let result = result.get("a_map").unwrap();
+
+        if let Data::Transform(Transform::Map(xf)) = result {
+            let result: Vec<Value> = xf
+                .value
+                .as_ref()
+                .expect("value of MapTransform at 'a_map' was not resolved")
+                .as_array()
+                .expect("value of MapTransform at 'a_map' was not resolved to an array")
+                .to_vec();
+
+            let expected: Vec<Value> = vec![
+                Value::Array(vec![
+                    Value::Number(Number::from(1)),
+                    Value::Number(Number::from(2)),
+                    Value::Number(Number::from(3)),
+                ]),
+                Value::Array(vec![
+                    Value::Number(Number::from(4)),
+                    Value::Number(Number::from(5)),
+                    Value::Number(Number::from(6)),
+                ]),
+            ];
+
+            assert_eq!(result, expected);
+        } else {
+            panic!("'a_map' was not serialized into a MapTransform");
+        }
+    }
+}

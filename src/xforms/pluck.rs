@@ -91,3 +91,44 @@ impl<'de> Deserialize<'de> for PluckTransform {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+    use serde_json::{Map, Value};
+
+    use crate::resolve;
+    use crate::xforms::Transform;
+    use crate::Data;
+
+    #[test]
+    fn xf_pluck_basic_functionality() {
+        let json = r#"
+            { "data": ["xf_pluck", "$var", ["prop"]] }
+        "#;
+
+        let variables: Map<String, Value> = json!({
+            "var": { "prop": "testing" }
+        })
+        .as_object()
+        .unwrap()
+        .to_owned();
+
+        let result = resolve(json, &variables);
+
+        let result = result.get("data").unwrap();
+
+        if let Data::Transform(Transform::Pluck(xf)) = result {
+            let result = xf
+                .value
+                .as_ref()
+                .expect("value of PluckTransform at 'data' was not resolved")
+                .as_str()
+                .expect("value of PluckTransform at 'data' was not resolved to a string slice");
+
+            assert_eq!(result, "testing");
+        } else {
+            panic!("'data' was not serialized into a PluckTransform");
+        }
+    }
+}
