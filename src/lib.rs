@@ -74,7 +74,7 @@ impl Transformable for Data {
         }
     }
 
-    fn resolve_source(&mut self, variables: &Map<String, Value>) -> bool {
+    fn resolve_source(&mut self, variables: &Map<String, Value>) {
         match *self {
             Data::Transform(ref mut xf) => xf.resolve_source(variables),
             _ => unimplemented!(),

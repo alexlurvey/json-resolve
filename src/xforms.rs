@@ -10,7 +10,7 @@ use std::ops::DerefMut;
 pub trait Transformable {
     fn get_source(&mut self) -> &mut Box<TransformSource>;
     fn get_source_value(&self) -> Option<&Value>;
-    fn resolve_source(&mut self, variables: &Map<String, Value>) -> bool
+    fn resolve_source(&mut self, variables: &Map<String, Value>)
     where
         Self: Sized,
     {
@@ -34,20 +34,17 @@ pub enum TransformSource {
     Transform(Transform),
 }
 
-pub fn resolve_source(xform: &mut impl Transformable, variables: &Map<String, Value>) -> bool {
+pub fn resolve_source(xform: &mut impl Transformable, variables: &Map<String, Value>) {
     match xform.get_source().deref_mut() {
         TransformSource::String(s) => {
             if let Some(v) = variables.get(&s[1..]) {
                 xform.set_source(v.clone()); // TODO: no clone?
-                return true;
             }
         }
         TransformSource::Transform(source_xform) => {
             source_xform.transform(variables);
         }
     };
-
-    false
 }
 
 impl Transformable for Transform {
@@ -65,7 +62,7 @@ impl Transformable for Transform {
         }
     }
 
-    fn resolve_source(&mut self, variables: &Map<String, Value>) -> bool {
+    fn resolve_source(&mut self, variables: &Map<String, Value>) {
         match *self {
             Transform::Map(ref mut xf) => xf.resolve_source(variables),
             Transform::Pluck(ref mut xf) => xf.resolve_source(variables),

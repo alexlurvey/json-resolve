@@ -36,20 +36,15 @@ impl Transformable for PluckTransform {
     }
 
     fn transform(&mut self, variables: &Map<String, Value>) {
-        let found = self.resolve_source(variables);
-        if found {
-            if let Some(Value::Object(obj)) = self.get_source_value() {
-                let plucked = pluck(obj, &self.path);
-                if let Some(value) = plucked {
-                    self.value = Some(value.clone());
-                } else {
-                    // println!(
-                    //     "xf_pluck path could not resolve to a value, {:?}",
-                    //     self.path
-                    // );
-                }
-            } else {
-                // println!("xf_pluck source resolved to non-object value");
+        if self.source_value.is_none() {
+            self.resolve_source(variables);
+        }
+
+        if let Some(Value::Object(obj)) = &self.source_value {
+            let plucked = pluck(obj, &self.path);
+
+            if let Some(value) = plucked {
+                self.value = Some(value.clone());
             }
         }
     }
@@ -57,11 +52,13 @@ impl Transformable for PluckTransform {
 
 pub fn pluck<'a>(source: &'a Map<String, Value>, path: &[String]) -> Option<&'a Value> {
     let mut result: Option<&Value> = None;
+
     let mut lookup: &Map<String, Value> = source;
 
     for key in path.iter() {
         if let Some(value) = lookup.get(key) {
             result = Some(value);
+
             if let Value::Object(obj) = value {
                 lookup = &obj;
             }
