@@ -1,9 +1,9 @@
 use crate::xforms::{TransformSource, Transformable};
 use serde::de::{Deserializer, Error};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct PluckTransform {
     pub source: Box<TransformSource>,
     pub path: Vec<String>,
@@ -94,7 +94,7 @@ mod tests {
     use serde_json::json;
     use serde_json::{Map, Value};
 
-    use crate::resolve;
+    use crate::__resolve;
     use crate::xforms::Transform;
     use crate::Data;
 
@@ -111,7 +111,7 @@ mod tests {
         .unwrap()
         .to_owned();
 
-        let result = resolve(json, &variables);
+        let result = __resolve(json, &variables);
 
         let result = result.get("data").unwrap();
 

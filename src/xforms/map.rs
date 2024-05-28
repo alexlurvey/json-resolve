@@ -1,10 +1,10 @@
 use crate::xforms::pluck::pluck;
 use crate::xforms::{Transform, TransformSource, Transformable};
 use serde::de::{Deserializer, Error};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct MapTransform {
     pub source: Box<TransformSource>,
     pub mapper: Box<Transform>,
@@ -105,7 +105,7 @@ impl<'de> Deserialize<'de> for MapTransform {
 
 #[cfg(test)]
 mod tests {
-    use crate::resolve;
+    use crate::__resolve;
     use crate::xforms::Transform;
     use crate::Data;
     use serde_json::json;
@@ -128,7 +128,7 @@ mod tests {
         .unwrap()
         .to_owned();
 
-        let result = resolve(json, &variables);
+        let result = __resolve(json, &variables);
 
         let result = result.get("a_map").unwrap();
 
@@ -168,7 +168,7 @@ mod tests {
         .unwrap()
         .to_owned();
 
-        let result = resolve(json, &variables);
+        let result = __resolve(json, &variables);
 
         let result = result.get("a_map").unwrap();
 

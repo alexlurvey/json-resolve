@@ -3,7 +3,7 @@ pub mod pluck;
 
 use crate::xforms::map::MapTransform;
 use crate::xforms::pluck::PluckTransform;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::ops::DerefMut;
 
@@ -20,14 +20,14 @@ pub trait Transformable {
     fn transform(&mut self, variables: &Map<String, Value>);
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Transform {
     Map(MapTransform),
     Pluck(PluckTransform),
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum TransformSource {
     String(String),
