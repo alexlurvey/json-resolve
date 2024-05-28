@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>hello-wasm example</title>
+  </head>
+  <body>
+    <script type="module">
+      import init, { resolve } from "./pkg/json_resolve.js";
+      const data = {
+        one: 'one',
+        two: 2,
+        first_name: ['xf_pluck', '$person', ['name']],
+        names: ['xf_map', '$people', ['xf_pluck', '$', ['first']]]
+      };
+      const vars = {
+        person: {
+          name: 'Alex'
+        },
+        people: [
+          { first: 'Sterling', last: 'Archer' },
+          { first: 'Jeffry', last: 'Smith' }
+        ]
+      };
+      init().then(() => {
+        const resolved = resolve(JSON.stringify(data), vars);
+        console.log('resolved', resolved);
+      });
+    </script>
+  </body>
+</html>

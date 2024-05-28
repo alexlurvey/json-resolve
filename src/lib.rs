@@ -1,11 +1,14 @@
+use wasm_bindgen::prelude::*;
+use web_sys::console;
+
 use crate::xforms::{Transform, TransformSource, Transformable};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 
 mod xforms;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Data {
     String(String),
@@ -46,10 +49,26 @@ fn resolve_map(data: &mut HashMap<String, Data>, variables: &Map<String, Value>)
     }
 }
 
-pub fn resolve(json: &'static str, variables: &Map<String, Value>) -> HashMap<String, Data> {
+pub fn __resolve(json: &'static str, variables: &Map<String, Value>) -> HashMap<String, Data> {
     let mut parsed: HashMap<String, Data> = serde_json::from_str(json).expect("error parsing json");
     resolve_map(&mut parsed, variables);
     parsed
+}
+
+#[wasm_bindgen]
+pub fn resolve(json: &str, variables: JsValue) -> JsValue {
+    let mut parsed: HashMap<String, Data> = serde_json::from_str(json).expect("error parsing json");
+    console::log_2(
+        &serde_wasm_bindgen::to_value("rust - init parsed").unwrap(),
+        &serde_wasm_bindgen::to_value(&parsed).unwrap(),
+    );
+    let vars: Map<String, Value> = serde_wasm_bindgen::from_value(variables).unwrap();
+    resolve_map(&mut parsed, &vars);
+    console::log_2(
+        &serde_wasm_bindgen::to_value("rust - parsed").unwrap(),
+        &serde_wasm_bindgen::to_value(&parsed).unwrap(),
+    );
+    serde_wasm_bindgen::to_value(&parsed).unwrap()
 }
 
 impl Transformable for Data {

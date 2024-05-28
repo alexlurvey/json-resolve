@@ -1,4 +1,4 @@
-use json_resolve::resolve;
+use json_resolve::__resolve;
 use serde_json::json;
 use serde_json::{Map, Value};
 
@@ -48,7 +48,7 @@ fn main() {
     .unwrap()
     .to_owned();
 
-    let result = resolve(JSON, &variables);
+    let result = __resolve(JSON, &variables);
 
     println!("result -- {:?}", result);
 }
